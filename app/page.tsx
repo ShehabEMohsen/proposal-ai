@@ -17,6 +17,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [downloadFormat, setDownloadFormat] = useState<"pdf" | "word">("pdf");
   const outputRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +88,41 @@ export default function Home() {
       navigator.clipboard.writeText(outputRef.current.innerText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const downloadWord = async () => {
+    const element = outputRef.current;
+    if (!element) return;
+    setPdfLoading(true);
+
+    try {
+      const res = await fetch("/api/generate-word", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          html: element.innerHTML,
+          yourName: form.yourName,
+        }),
+      });
+
+      if (!res.ok) {
+        alert("Failed to generate Word document.");
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Proposal - ${form.yourName || "Draft"}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Word error:", err);
+      alert("Failed to generate Word document.");
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -684,13 +720,42 @@ Example:
                 >
                   {copied ? "Copied ✓" : "Copy text"}
                 </button>
-                <button
-                  className="btn-action btn-action-primary"
-                  onClick={downloadPDF}
-                  disabled={loading || pdfLoading}
-                >
-                  {pdfLoading ? "Generating PDF..." : "Download PDF"}
-                </button>
+                <div style={{ display: "flex", gap: "0" }}>
+                  <button
+                    className="btn-action btn-action-primary"
+                    onClick={
+                      downloadFormat === "pdf" ? downloadPDF : downloadWord
+                    }
+                    disabled={loading || pdfLoading}
+                    style={{ borderRadius: "8px 0 0 8px", borderRight: "none" }}
+                  >
+                    {pdfLoading
+                      ? "Generating..."
+                      : downloadFormat === "pdf"
+                        ? "Download PDF"
+                        : "Download Word"}
+                  </button>
+                  <select
+                    value={downloadFormat}
+                    onChange={(e) =>
+                      setDownloadFormat(e.target.value as "pdf" | "word")
+                    }
+                    disabled={loading || pdfLoading}
+                    style={{
+                      border: "1px solid #C8522A",
+                      borderRadius: "0 8px 8px 0",
+                      background: "#C8522A",
+                      color: "white",
+                      padding: "0 10px",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                      outline: "none",
+                    }}
+                  >
+                    <option value="pdf">PDF</option>
+                    <option value="word">Word</option>
+                  </select>
+                </div>
               </div>
             </div>
 
