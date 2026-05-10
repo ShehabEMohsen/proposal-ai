@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 // const projectTypes = [
 //   "Web Design",
@@ -101,7 +99,6 @@ export default function Home() {
       const { default: jsPDF } = await import("jspdf");
       const { default: html2canvas } = await import("html2canvas-pro");
 
-      // Temporarily expand element to full width for clean capture
       const originalWidth = element.style.width;
       element.style.width = "750px";
 
